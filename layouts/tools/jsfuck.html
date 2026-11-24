@@ -109,7 +109,21 @@
             if (!event.data || event.data.type !== 'decode') return;
 
             try {
-                const result = eval(event.data.code);
+                try {
+    Object.defineProperty(window, 'localStorage', {
+        configurable: true,
+        value: {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {},
+            clear: () => {},
+            key: () => null,
+            get length() { return 0; }
+        }
+    });
+} catch(e) {}
+
+const result = eval(event.data.code);
                 let text;
 
                 if (typeof result === 'string') {
@@ -188,3 +202,4 @@
 })();
 </script>
 {{ end }}
+
