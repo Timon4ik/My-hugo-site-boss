@@ -1,0 +1,38 @@
+﻿baseURL = "https://timon4ik.github.io/My-hugo-site-boss/"
+languageCode = "ru"
+title = "Тимур | Мой сайт"
+theme = "PaperMod"
+
+[params]
+  author = "Тимур"
+  description = "Мой личный сайт, проекты и интересы"
+  defaultTheme = "auto"
+  ShowReadingTime = true
+  ShowShareButtons = false
+  ShowPostNavLinks = true
+  ShowBreadCrumbs = true
+  ShowCodeCopyButtons = true
+
+[params.homeInfoParams]
+  Title = "Привет! 👋"
+  Content = "Добро пожаловать на мой сайт. Здесь мои проекты, интересы и немного информации обо мне."
+
+[[menu.main]]
+  name = "Главная"
+  url = "/"
+  weight = 1
+
+[[menu.main]]
+  name = "Обо мне"
+  url = "/about/"
+  weight = 2
+
+[[menu.main]]
+  name = "Проекты"
+  url = "/projects/"
+  weight = 3
+
+[[menu.main]]
+  name = "Контакты"
+  url = "/contacts/"
+  weight = 4
