@@ -1,0 +1,190 @@
+﻿{{ define "main" }}
+<div class="jsfuck-page">
+    <h1>JSFuck Decoder</h1>
+    <p class="jsfuck-description">
+        Декодирование JSFuck-выражений в читаемый JavaScript.
+    </p>
+
+    <div class="jsfuck-warning">
+        ⚠️ Декодирование выполняется в изолированном sandbox.
+        Не вставляй неизвестный код, если не понимаешь риски.
+    </div>
+
+    <label for="jsfuck-input">JSFuck-код</label>
+    <textarea id="jsfuck-input" placeholder="Вставь JSFuck-код сюда..." spellcheck="false"></textarea>
+
+    <div class="jsfuck-buttons">
+        <button id="decode-button">Декодировать</button>
+        <button id="clear-button" class="secondary">Очистить</button>
+    </div>
+
+    <label for="jsfuck-output">Результат</label>
+    <textarea id="jsfuck-output" readonly placeholder="Результат декодирования появится здесь..." spellcheck="false"></textarea>
+
+    <div class="jsfuck-buttons">
+        <button id="copy-button" class="secondary">Копировать результат</button>
+    </div>
+
+    <div id="jsfuck-status"></div>
+
+    <iframe id="jsfuck-sandbox" sandbox="allow-scripts" style="display:none"></iframe>
+</div>
+
+<style>
+.jsfuck-page {
+    max-width: 900px;
+    margin: 30px auto;
+}
+.jsfuck-description {
+    color: var(--secondary);
+    margin-bottom: 25px;
+}
+.jsfuck-page textarea {
+    width: 100%;
+    min-height: 220px;
+    box-sizing: border-box;
+    resize: vertical;
+    padding: 15px;
+    margin: 10px 0 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--entry);
+    color: var(--primary);
+    font-family: Consolas, monospace;
+    font-size: 14px;
+}
+.jsfuck-page label {
+    display: block;
+    font-weight: 600;
+}
+.jsfuck-warning {
+    padding: 12px 15px;
+    border-radius: 10px;
+    background: rgba(255, 180, 0, .08);
+    border: 1px solid rgba(255, 180, 0, .3);
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+.jsfuck-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 5px 0 20px;
+}
+.jsfuck-buttons button {
+    cursor: pointer;
+    border: 0;
+    border-radius: 9px;
+    padding: 11px 18px;
+    background: #3478f6;
+    color: white;
+    font-weight: 600;
+}
+.jsfuck-buttons button.secondary {
+    background: var(--tertiary);
+    color: var(--primary);
+}
+#jsfuck-status {
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--secondary);
+    overflow-wrap: anywhere;
+}
+</style>
+
+<script>
+(() => {
+    const input = document.getElementById('jsfuck-input');
+    const output = document.getElementById('jsfuck-output');
+    const status = document.getElementById('jsfuck-status');
+    const frame = document.getElementById('jsfuck-sandbox');
+
+    // Изолированный iframe без доступа к родительской странице.
+    frame.srcdoc = `
+        <!DOCTYPE html>
+        <meta http-equiv="Content-Security-Policy"
+          content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; connect-src 'none'; img-src data:; style-src 'unsafe-inline'">
+        <script>
+        window.addEventListener('message', function(event) {
+            if (!event.data || event.data.type !== 'decode') return;
+
+            try {
+                const result = eval(event.data.code);
+                let text;
+
+                if (typeof result === 'string') {
+                    text = result;
+                } else if (result === undefined) {
+                    text = 'undefined';
+                } else {
+                    text = String(result);
+                }
+
+                parent.postMessage({type: 'decoded', result: text}, '*');
+            } catch (error) {
+                parent.postMessage({type: 'decode-error', error: String(error)}, '*');
+            }
+        });
+        <\/script>
+    `;
+
+    window.addEventListener('message', event => {
+        if (event.source !== frame.contentWindow) return;
+
+        if (event.data.type === 'decoded') {
+            output.value = event.data.result;
+            status.textContent = 'Декодирование завершено.';
+        }
+
+        if (event.data.type === 'decode-error') {
+            output.value = '';
+            status.textContent = 'Ошибка декодирования: ' + event.data.error;
+        }
+    });
+
+    document.getElementById('decode-button').addEventListener('click', () => {
+        const code = input.value.trim();
+
+        if (!code) {
+            status.textContent = 'Сначала вставь JSFuck-код.';
+            return;
+        }
+
+        if (code.length > 1000000) {
+            status.textContent = 'Слишком большой код. Максимум 1 МБ.';
+            return;
+        }
+
+        output.value = '';
+        status.textContent = 'Декодирование...';
+
+        frame.contentWindow.postMessage({
+            type: 'decode',
+            code: code
+        }, '*');
+    });
+
+    document.getElementById('clear-button').addEventListener('click', () => {
+        input.value = '';
+        output.value = '';
+        status.textContent = '';
+    });
+
+    document.getElementById('copy-button').addEventListener('click', async () => {
+        if (!output.value) {
+            status.textContent = 'Нет результата для копирования.';
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(output.value);
+            status.textContent = 'Результат скопирован!';
+        } catch {
+            output.select();
+            document.execCommand('copy');
+            status.textContent = 'Попытка копирования выполнена.';
+        }
+    });
+})();
+</script>
+{{ end }}

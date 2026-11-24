@@ -36,3 +36,8 @@ theme = "PaperMod"
   name = "Контакты"
   url = "/contacts/"
   weight = 4
+
+[[menu.main]]
+  name = "JSFuck Decoder"
+  url = "/tools/jsfuck/"
+  weight = 5
